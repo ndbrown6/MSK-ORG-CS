@@ -1,0 +1,6 @@
+.*.tmp
+*.pyc
+*.RData
+*.i
+.DS_Store
+.Rapp.history

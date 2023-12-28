@@ -63,6 +63,11 @@ manifest = readr::read_tsv(file = url_manifest, col_names = TRUE, col_types = co
 		   sarcoma_predominant_yes_no == "1" ~ "yes",
 		   sarcoma_predominant_yes_no == "2" ~ "no"
 	   )) %>%
+	   dplyr::mutate(ERBB2_gene_amplification = case_when(
+		   is.na(ERBB2_gene_amplification) ~ "Copy-neutral",
+		   ERBB2_gene_amplification == "Not Available" ~ "Not available",
+		   TRUE ~ ERBB2_gene_amplification
+	   )) %>%
 	   readr::type_convert()
 
 plot_ = manifest %>%
@@ -83,7 +88,7 @@ plot_ = manifest %>%
 	ggplot(aes(x = sample_name, y = mean, ymin = min, ymax = max, fill = ERBB2_gene_amplification)) +
 	geom_bar(stat = "identity", width = .85) +
 	geom_pointrange(stat = "identity", shape = 21, fill = "white", color = "grey10", size = .6) +
-	scale_fill_brewer(type = "qual", palette = 2) +
+	scale_fill_brewer(type = "qual", palette = 6) +
 	scale_y_sqrt(limits = c(0, .81),
 		     breaks = c(seq(from = .01, to = .09, by = .01), seq(from = .1, to = .9, by = .1)),
 		     labels = c(c("", ".02", "", ".04", "", ".06", "", ".08", ""), seq(from = .1, to = .9, by = .1))) +

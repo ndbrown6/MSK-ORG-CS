@@ -26,17 +26,23 @@ manifest = readr::read_tsv(file = url_manifest, col_names = TRUE, col_types = co
 	   dplyr::mutate(hgvsp_short = gsub(pattern = "(Driver)", replacement = "", x = hgvsp_short, fixed = TRUE)) %>%
 	   dplyr::mutate(hgvsp_short = gsub(pattern = ",", replacement = ";", x = hgvsp_short, fixed = TRUE)) %>%
 	   dplyr::mutate(hgvsp_short = ifelse(hgvsp_short == "no alteration", NA, hgvsp_short)) %>%
-	   readr::type_convert()
+	   readr::type_convert() %>%
+	   dplyr::left_join(readr::read_tsv(file = url_ihc, col_names = TRUE, col_types = cols(.default = col_character())) %>%
+			    readr::type_convert() %>%
+			    dplyr::rename(sample_name = `sample number`,
+					  her2_ihc = `HER-2 IHC score`,
+					  trop2_ihc = `TROP-2 IHC score`), by = "sample_name")
 
 smry_ = manifest %>%
-	reshape2::melt(id.vars = c("sample_name", "tp53_mutated", "carcinoma_classification", "sarcoma_classification", "sarcoma_predominant"),
+	reshape2::melt(id.vars = c("sample_name", "tp53_mutated", "carcinoma_classification", "sarcoma_classification", "sarcoma_predominant", "her2_ihc"),
 		       measure.vars = c("HER2_gene_expression_1", "HER2_gene_expression_2", "HER2_gene_expression_3")) %>%
 	dplyr::group_by(sample_name) %>%
 	dplyr::summarize(her2 = mean(value, na.rm = TRUE),
 			 tp53_mutated = unique(tp53_mutated),
 			 carcinoma_classification = unique(carcinoma_classification),
 			 sarcoma_classification = unique(sarcoma_classification),
-			 sarcoma_predominant = unique(sarcoma_predominant)) %>%
+			 sarcoma_predominant = unique(sarcoma_predominant),
+			 her2_ihc = unique(her2_ihc)+100) %>%
 	dplyr::ungroup() %>%
 	dplyr::mutate(sample_name = gsub(pattern = "cs", replacement = "CS", x = sample_name, fixed = TRUE)) %>%
 	dplyr::arrange(desc(her2))
@@ -47,7 +53,7 @@ draw(Heatmap(matrix = smry_ %>%
 	     	      as.data.frame() %>%
 	     	      tibble::column_to_rownames(var = "sample_name") %>%
 	     	      t(),
-	     col = c("1" = "#fb9a99", "2" = "#1f78b4", "3" = "#b2df8a", "4" = "#33a02c", "NA" = "dedbd8"),
+	     col = c("1" = "#fb9a99", "2" = "#1f78b4", "3" = "#b2df8a", "4" = "#33a02c", "100" = "#bae4bc", "101" = "#7bccc4", "102" = "#43a2ca", "103" = "#0868ac"),
 	     name = " ",
 	     na_col = "#f0f0f0",
 	     rect_gp = gpar(col = "white"),

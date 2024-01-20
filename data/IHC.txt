@@ -1,0 +1,73 @@
+sample number	HER-2 IHC score	TROP-2 IHC score
+cs31	3	
+cs29	2	
+cs20	2	
+cs19	1	
+cs9	1	
+cs18	2	
+cs5	0	
+cs40	2	
+cs42	2	
+cs39	2	
+cs27		
+cs12	2	
+cs41	1	
+cs49	2	
+cs68	2	
+cs36		
+cs26		
+cs66		
+cs44		
+cs14		
+cs13	0	
+cs16		
+cs10		
+cs28		
+cs4		
+cs30		
+cs62		
+cs23		
+cs67		
+cs69	2	
+cs32	1	
+cs55	1	
+cs63	1	
+cs59	2	
+cs6	2	
+cs64	2	
+cs2	1	
+cs71	1	
+cs35	1	
+cs65	2	
+cs45	1	
+cs11	0	
+cs1	2	
+cs21	0	
+cs38		
+cs24		
+cs34		
+cs22		
+cs3		
+cs53		
+cs50		
+cs33		
+cs48		
+cs46		
+cs70		
+cs51		
+cs17		
+cs8	0	
+cs15	0	
+cs25	1	
+cs56	1	
+cs52	1	
+cs54	1	
+cs58	2	
+cs72	1	
+cs60	0	
+cs43	1	
+cs47	0	
+cs61		
+cs7	1	
+cs37	1	
+cs57	1	

@@ -1,0 +1,168 @@
+#==================================================
+# David Brown
+# brownd7@mskcc.org
+#==================================================
+rm(list=ls(all=TRUE))
+source("config.R")
+
+manifest = readr::read_tsv(file = url_manifest, col_names = TRUE, col_types = cols(.default = col_character())) %>%
+	   dplyr::select(sample_name = `sample number`,
+			 tp53_mutated = `TP53 mut?`,
+			 hgvsp_short = `IMPACT TP53`,
+			 carcinoma_component = `carcinoma component`,
+			 carcinoma_classification = `classification of carcinoma (1=serous, 2=endometrioid, 3=HGNOS, 4=undiff)`,
+			 sarcoma_classification = `sarcoma component classification (1=homologous; 2=heterologous-including rhabdo, chondroid, chondrosarc)`,
+			 `sarcoma_predominant_%` = `sarcoma predominant? >50%`,
+			 sarcoma_predominant = `sarcoma predominant? (1=yes, 2=no)`,
+			 HER2_gene_expression_1,
+			 HER2_gene_expression_2,
+			 HER2_gene_expression_3,
+			 HER2_gene_expression_mean,
+			 TROP2_gene_expression_1,
+			 TROP2_gene_expression_2,
+			 TROP2_gene_expression_3,
+			 TROP2_gene_expression_mean,
+			 ERBB2_gene_amplification) %>%
+	   dplyr::mutate(hgvsp_short = gsub(pattern = "(Driver)", replacement = "", x = hgvsp_short, fixed = TRUE)) %>%
+	   dplyr::mutate(hgvsp_short = gsub(pattern = ",", replacement = ";", x = hgvsp_short, fixed = TRUE)) %>%
+	   dplyr::mutate(hgvsp_short = ifelse(hgvsp_short == "no alteration", NA, hgvsp_short)) %>%
+	   readr::type_convert() %>%
+	   dplyr::left_join(readr::read_tsv(file = url_ihc, col_names = TRUE, col_types = cols(.default = col_character())) %>%
+			    readr::type_convert() %>%
+			    dplyr::rename(sample_name = `sample number`,
+					  her2_ihc = `HER-2 IHC score`,
+					  trop2_ihc = `TROP-2 IHC score`), by = "sample_name")
+
+smry_ = manifest %>%
+	reshape2::melt(id.vars = c("sample_name", "tp53_mutated", "carcinoma_classification", "sarcoma_classification", "sarcoma_predominant", "her2_ihc"),
+		       measure.vars = c("HER2_gene_expression_1", "HER2_gene_expression_2", "HER2_gene_expression_3")) %>%
+	dplyr::group_by(sample_name) %>%
+	dplyr::summarize(her2 = mean(value, na.rm = TRUE),
+			 tp53_mutated = unique(tp53_mutated),
+			 carcinoma_classification = unique(carcinoma_classification),
+			 sarcoma_classification = unique(sarcoma_classification),
+			 sarcoma_predominant = unique(sarcoma_predominant),
+			 her2_ihc = unique(her2_ihc)+100) %>%
+	dplyr::ungroup()
+	
+plot_ = smry_ %>%
+        dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
+	ggplot(aes(x = sarcoma_predominant, y = her2)) +
+	geom_boxplot(stat = "boxplot", outlier.shape = NA, fill = "white", show.legend = FALSE) +
+	geom_jitter(position = position_jitter(0.15, 0), size = 3.5, shape = 21, fill = "white", alpha = .85, inherit.aes = TRUE) +
+	scale_x_discrete(breaks = c("1", "2"),
+			 labels = c("Yes", "No")) +
+	scale_y_sqrt(limits = c(0, .81),
+		     breaks = c(seq(from = .01, to = .09, by = .01), seq(from = .1, to = .9, by = .1)),
+		     labels = c(c("", ".02", "", ".04", "", ".06", "", ".08", ""), seq(from = .1, to = .9, by = .1))) +
+	xlab("Predominant sarcoma") +
+	ylab("HER2 Expression Fold-Change") +
+	geom_signif(stat = "signif", test = "wilcox.test", test.args = list(exact = FALSE, alternative = "two.sided"),
+		    y_position = sqrt(0.75),
+		    textsize = 2.5,
+		    vjust = -1,
+		    comparison = list(c("1", "2"))) +
+	theme_minimal() +
+	theme(axis.title.x = element_text(margin = margin(t = 20)),
+ 	      axis.title.y = element_text(margin = margin(r = 20)),
+	      axis.text.x = element_text(size = 11),
+	      axis.text.y = element_text(size = 11))
+	
+pdf(file = "../res/Her2_by_Predominat_Sarcoma.pdf", width = 3.5, height = 4)
+print(plot_)
+dev.off()
+
+plot_ = smry_ %>%
+	dplyr::filter(!is.na(sarcoma_classification)) %>%
+        dplyr::mutate(sarcoma_classification = factor(sarcoma_classification, levels = c(1,2), ordered = TRUE)) %>%
+	ggplot(aes(x = sarcoma_classification, y = her2)) +
+	geom_boxplot(stat = "boxplot", outlier.shape = NA, fill = "white", show.legend = FALSE) +
+	geom_jitter(position = position_jitter(0.15, 0), size = 3.5, shape = 21, fill = "white", alpha = .85, inherit.aes = TRUE) +
+	scale_x_discrete(breaks = c("1", "2"),
+			 labels = c("Homologous", "Heterologous")) +
+	scale_y_sqrt(limits = c(0, .81),
+		     breaks = c(seq(from = .01, to = .09, by = .01), seq(from = .1, to = .9, by = .1)),
+		     labels = c(c("", ".02", "", ".04", "", ".06", "", ".08", ""), seq(from = .1, to = .9, by = .1))) +
+	xlab("Sarcoma classification") +
+	ylab("HER2 Expression Fold-Change") +
+	geom_signif(stat = "signif", test = "wilcox.test", test.args = list(exact = FALSE, alternative = "two.sided"),
+		    y_position = sqrt(0.75),
+		    textsize = 2.5,
+		    vjust = -1,
+		    comparison = list(c("1", "2"))) +
+	theme_minimal() +
+	theme(axis.title.x = element_text(margin = margin(t = 20)),
+ 	      axis.title.y = element_text(margin = margin(r = 20)),
+	      axis.text.x = element_text(size = 11),
+	      axis.text.y = element_text(size = 11))
+	
+pdf(file = "../res/Her2_by_Sarcoma_Classification.pdf", width = 3.5, height = 4)
+print(plot_)
+dev.off()
+
+smry_ = manifest %>%
+	reshape2::melt(id.vars = c("sample_name", "tp53_mutated", "carcinoma_classification", "sarcoma_classification", "sarcoma_predominant"),
+		       measure.vars = c("TROP2_gene_expression_1", "TROP2_gene_expression_2", "TROP2_gene_expression_3")) %>%
+	dplyr::group_by(sample_name) %>%
+	dplyr::summarize(trop2 = mean(value, na.rm = TRUE),
+			 tp53_mutated = unique(tp53_mutated),
+			 carcinoma_classification = unique(carcinoma_classification),
+			 sarcoma_classification = unique(sarcoma_classification),
+			 sarcoma_predominant = unique(sarcoma_predominant)) %>%
+	dplyr::ungroup() %>%
+	tidyr::drop_na("trop2")
+	
+plot_ = smry_ %>%
+        dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
+	ggplot(aes(x = sarcoma_predominant, y = trop2)) +
+	geom_boxplot(stat = "boxplot", outlier.shape = NA, fill = "white", show.legend = FALSE) +
+	geom_jitter(position = position_jitter(0.15, 0), size = 3.5, shape = 21, fill = "white", alpha = .85, inherit.aes = TRUE) +
+	scale_x_discrete(breaks = c("1", "2"),
+			 labels = c("Yes", "No")) +
+	scale_y_sqrt(limits = c(0, 150),
+		     breaks = c(seq(from = 1, to = 7, by = 2), seq(from = 10, to = 150, by = 20)),
+		     labels = c(seq(from = 1, to = 7, by = 2), seq(from = 10, to = 150, by = 20))) +
+	xlab("Predominant sarcoma") +
+	ylab("TROP2 Expression Fold-Change") +
+	geom_signif(stat = "signif", test = "wilcox.test", test.args = list(exact = FALSE, alternative = "two.sided"),
+		    y_position = sqrt(140),
+		    textsize = 2.5,
+		    vjust = -1,
+		    comparison = list(c("1", "2"))) +
+	theme_minimal() +
+	theme(axis.title.x = element_text(margin = margin(t = 20)),
+ 	      axis.title.y = element_text(margin = margin(r = 20)),
+	      axis.text.x = element_text(size = 11),
+	      axis.text.y = element_text(size = 11))
+	
+pdf(file = "../res/Trop2_by_Predominat_Sarcoma.pdf", width = 3.5, height = 4)
+print(plot_)
+dev.off()
+
+plot_ = smry_ %>%
+	dplyr::filter(!is.na(sarcoma_classification)) %>%
+        dplyr::mutate(sarcoma_classification = factor(sarcoma_classification, levels = c(1,2), ordered = TRUE)) %>%
+	ggplot(aes(x = sarcoma_classification, y = trop2)) +
+	geom_boxplot(stat = "boxplot", outlier.shape = NA, fill = "white", show.legend = FALSE) +
+	geom_jitter(position = position_jitter(0.15, 0), size = 3.5, shape = 21, fill = "white", alpha = .85, inherit.aes = TRUE) +
+	scale_x_discrete(breaks = c("1", "2"),
+			 labels = c("Homologous", "Heterologous")) +
+	scale_y_sqrt(limits = c(0, 150),
+		     breaks = c(seq(from = 1, to = 7, by = 2), seq(from = 10, to = 150, by = 20)),
+		     labels = c(seq(from = 1, to = 7, by = 2), seq(from = 10, to = 150, by = 20))) +
+	xlab("Sarcoma classification") +
+	ylab("TROP2 Expression Fold-Change") +
+	geom_signif(stat = "signif", test = "wilcox.test", test.args = list(exact = FALSE, alternative = "two.sided"),
+		    y_position = sqrt(140),
+		    textsize = 2.5,
+		    vjust = -1,
+		    comparison = list(c("1", "2"))) +
+	theme_minimal() +
+	theme(axis.title.x = element_text(margin = margin(t = 20)),
+ 	      axis.title.y = element_text(margin = margin(r = 20)),
+	      axis.text.x = element_text(size = 11),
+	      axis.text.y = element_text(size = 11))
+	
+pdf(file = "../res/Trop2_by_Sarcoma_Classification.pdf", width = 3.5, height = 4)
+print(plot_)
+dev.off()

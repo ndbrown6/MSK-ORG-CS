@@ -81,6 +81,7 @@ draw(Heatmap(matrix = smry_ %>%
 dev.off()
 
 smry_ = manifest %>%
+	dplyr::filter(!(sample_name %in% exclude)) %>%
 	reshape2::melt(id.vars = c("sample_name", "tp53_mutated", "carcinoma_classification", "sarcoma_classification", "sarcoma_predominant"),
 		       measure.vars = c("TROP2_gene_expression_1", "TROP2_gene_expression_2", "TROP2_gene_expression_3")) %>%
 	dplyr::group_by(sample_name) %>%
@@ -120,8 +121,8 @@ draw(Heatmap(matrix = smry_ %>%
 	     cluster_columns = FALSE,
 	     column_order = smry_ %>% .[["sample_name"]],
 	     use_raster = FALSE,
-	     width = unit((14*2) / 72 * 50, "cm"),
-	     height = unit(2, "cm"),
+	     width = unit(14*2, "cm"),
+	     height = unit(2/5 * 4 , "cm"),
 
 	     show_heatmap_legend = TRUE,
 	     heatmap_legend_param = list(legend_height = unit(3, "cm"), legend_width = unit(2, "cm"))))

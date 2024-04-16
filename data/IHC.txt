@@ -1,73 +1,73 @@
-sample number	HER-2 IHC score	TROP-2 IHC score
-cs31	3	
-cs29	2	
-cs20	2	
-cs19	1	
-cs9	1	
-cs18	2	
-cs5	0	
-cs40	2	
-cs42	2	
-cs39	2	
-cs27		
-cs12	2	
-cs41	1	
-cs49	2	
-cs68	2	
-cs36		
-cs26		
-cs66		
-cs44		
-cs14		
-cs13	0	
-cs16		
-cs10		
-cs28		
-cs4		
-cs30		
-cs62		
-cs23		
-cs67		
-cs69	2	
-cs32	1	
-cs55	1	
-cs63	1	
-cs59	2	
-cs6	2	
-cs64	2	
-cs2	1	
-cs71	1	
-cs35	1	
-cs65	2	
-cs45	1	
-cs11	0	
-cs1	2	
-cs21	0	
-cs38		
-cs24		
-cs34		
-cs22		
-cs3		
-cs53		
-cs50		
-cs33		
-cs48		
-cs46		
-cs70		
-cs51		
-cs17		
-cs8	0	
-cs15	0	
-cs25	1	
-cs56	1	
-cs52	1	
-cs54	1	
-cs58	2	
-cs72	1	
-cs60	0	
-cs43	1	
-cs47	0	
-cs61		
-cs7	1	
-cs37	1	
-cs57	1	
+sample number	HER-2 IHC score	TROP-2 IHC score	TROP-2 IHC score (carcinoma)
+cs1	2	25	25
+cs10		50	47.5
+cs11	0		0
+cs12	2	20	1
+cs13	0	10	1
+cs14		140	84
+cs15	0	170	170
+cs16		90	18
+cs17		40	32
+cs18	2	50	5
+cs19	1	5	0.5
+cs2	1	2	1.2
+cs20	2	90	90
+cs21	0	90	54
+cs22		60	60
+cs23		25	21.5
+cs24		0	0
+cs25	1	140	70
+cs26		160	128
+cs27			
+cs28		120	96
+cs29	2	80	48
+cs3		150	142.5
+cs30		0	0
+cs31	3	150	90
+cs32	1	170	51
+cs33		140	28
+cs34		55	5.5
+cs35	1	170	170
+cs36		230	115
+cs37	1		0
+cs38		15	13.5
+cs39	2		
+cs4		15	6
+cs40	2	140	126
+cs41	1	130	117
+cs42	2	90	27
+cs43	1	240	240
+cs44		40	36
+cs45	1	170	161.5
+cs46		215	161.5
+cs47	0	120	36
+cs48		190	152
+cs49	2	160	152
+cs5	0	0	0
+cs50		10	8
+cs51		120	108
+cs52	1	150	105
+cs53		60	30
+cs54	1	165	99
+cs55	1	170	153
+cs56	1	0	0
+cs57	1	90	1.8
+cs58	2	250	237.5
+cs59	2	110	66
+cs6	2	160	128
+cs60	0		0
+cs61			
+cs62		100	100
+cs63	1	95	85.5
+cs64	2	140	98
+cs65	2	70	21
+cs66		130	104
+cs67		0	0
+cs68	2	5	5
+cs69	2	40	32
+cs7	1	170	85
+cs70		95	57
+cs71	1	105	84
+cs72	1	20	20
+cs8	0	100	
+cs9	1	160	64

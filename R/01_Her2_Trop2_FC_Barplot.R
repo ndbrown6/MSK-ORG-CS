@@ -106,6 +106,7 @@ print(plot_)
 dev.off()
 
 plot_ = manifest %>%
+	dplyr::filter(!(sample_name %in% exclude)) %>%
 	reshape2::melt(id.vars = "sample_name", measure.vars = c("TROP2_gene_expression_1", "TROP2_gene_expression_2", "TROP2_gene_expression_3")) %>%
 	dplyr::group_by(sample_name) %>%
 	dplyr::summarize(mean = mean(value, na.rm = TRUE),

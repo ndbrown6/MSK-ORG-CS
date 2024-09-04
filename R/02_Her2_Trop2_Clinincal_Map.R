@@ -108,8 +108,7 @@ smry_ = manifest %>%
 		trop2_ihc >= 250 & trop2_ihc < 275 ~ "109",
 		trop2_ihc >= 275 & trop2_ihc <= 300 ~ "110",
 		TRUE ~ "NA"
-	)) %>%
-	dplyr::select(-trop2_ihc)
+	))
 
 palette = colorRampPalette(colors = c("#bae4bc", "#7bccc4", "#43a2ca", "#0868ac"))(length(unique(smry_ %>% .[["trop2_cat"]])))
 names(palette) = sort(unique(smry_ %>% .[["trop2_cat"]]))
@@ -117,6 +116,7 @@ names(palette) = sort(unique(smry_ %>% .[["trop2_cat"]]))
 pdf(file = "../res/Trop2_Strip_Chart.pdf", width = 14, height = 6)
 draw(Heatmap(matrix = smry_ %>%
 	     	      dplyr::select(-trop2) %>%
+	     	      dplyr::select(-trop2_ihc) %>%
 	     	      as.data.frame() %>%
 	     	      tibble::column_to_rownames(var = "sample_name") %>%
 	     	      t(),
@@ -145,4 +145,29 @@ draw(Heatmap(matrix = smry_ %>%
 
 	     show_heatmap_legend = TRUE,
 	     heatmap_legend_param = list(legend_height = unit(3, "cm"), legend_width = unit(2, "cm"))))
+dev.off()
+
+plot_ = smry_ %>%
+	dplyr::select(sample_name, Expression = trop2, IHC = trop2_ihc) %>%
+	dplyr::mutate(IHC = IHC / 2) %>%
+	reshape2::melt() %>%
+	dplyr::arrange(variable, desc(value)) %>%
+	dplyr::mutate(sample_name = factor(sample_name, levels = unique(sample_name), ordered = TRUE)) %>%
+	ggplot(aes(x = sample_name, y = value, fill = variable)) +
+	geom_bar(stat = "identity", position = "dodge", width = .85, color = "white") +
+	scale_fill_brewer(type = "qual", palette = 6) +
+	scale_y_sqrt(limits = c(0, 150),
+		     breaks = c(seq(from = 1, to = 7, by = 2), seq(from = 10, to = 150, by = 20)),
+		     labels = c(seq(from = 1, to = 7, by = 2), seq(from = 10, to = 150, by = 20))) +
+	xlab("") +
+	ylab("Expression Fold-Change") +
+	theme_minimal() +
+	theme(axis.title.x = element_text(margin = margin(t = 20), size = 14),
+ 	      axis.title.y = element_text(margin = margin(r = 20), size = 14),
+	      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 12),
+	      axis.text.y = element_text(size = 12)) +
+	guides(fill = guide_legend(title = "Assay"))
+
+pdf(file = "../res/Fold_change_by_Sample_Trop2.pdf", width = 20, height = 6)
+print(plot_)
 dev.off()

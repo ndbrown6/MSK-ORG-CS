@@ -82,18 +82,37 @@ dev.off()
 
 smry_ = manifest %>%
 	dplyr::filter(!(sample_name %in% exclude)) %>%
-	reshape2::melt(id.vars = c("sample_name", "tp53_mutated", "carcinoma_classification", "sarcoma_classification", "sarcoma_predominant"),
+	reshape2::melt(id.vars = c("sample_name", "tp53_mutated", "carcinoma_classification", "sarcoma_classification", "sarcoma_predominant", "trop2_ihc"),
 		       measure.vars = c("TROP2_gene_expression_1", "TROP2_gene_expression_2", "TROP2_gene_expression_3")) %>%
 	dplyr::group_by(sample_name) %>%
 	dplyr::summarize(trop2 = mean(value, na.rm = TRUE),
 			 tp53_mutated = unique(tp53_mutated),
 			 carcinoma_classification = unique(carcinoma_classification),
 			 sarcoma_classification = unique(sarcoma_classification),
-			 sarcoma_predominant = unique(sarcoma_predominant)) %>%
+			 sarcoma_predominant = unique(sarcoma_predominant),
+			 trop2_ihc = mean(trop2_ihc, na.rm=TRUE)) %>%
 	dplyr::ungroup() %>%
 	tidyr::drop_na() %>%
 	dplyr::mutate(sample_name = gsub(pattern = "cs", replacement = "CS", x = sample_name, fixed = TRUE)) %>%
-	dplyr::arrange(desc(trop2))
+	dplyr::arrange(desc(trop2)) %>%
+	dplyr::mutate(trop2_cat = case_when(
+		trop2_ihc >= 0 & trop2_ihc < 25 ~ "100",
+		trop2_ihc >= 25 & trop2_ihc < 50 ~ "101",
+		trop2_ihc >= 50 & trop2_ihc < 100 ~ "102",
+		trop2_ihc >= 100 & trop2_ihc < 125 ~ "103",
+		trop2_ihc >= 125 & trop2_ihc < 150 ~ "104",
+		trop2_ihc >= 150 & trop2_ihc < 175 ~ "105",
+		trop2_ihc >= 175 & trop2_ihc < 200 ~ "106",
+		trop2_ihc >= 200 & trop2_ihc < 225 ~ "107",
+		trop2_ihc >= 225 & trop2_ihc < 250 ~ "108",
+		trop2_ihc >= 250 & trop2_ihc < 275 ~ "109",
+		trop2_ihc >= 275 & trop2_ihc <= 300 ~ "110",
+		TRUE ~ "NA"
+	)) %>%
+	dplyr::select(-trop2_ihc)
+
+palette = colorRampPalette(colors = c("#bae4bc", "#7bccc4", "#43a2ca", "#0868ac"))(length(unique(smry_ %>% .[["trop2_cat"]])))
+names(palette) = sort(unique(smry_ %>% .[["trop2_cat"]]))
 
 pdf(file = "../res/Trop2_Strip_Chart.pdf", width = 14, height = 6)
 draw(Heatmap(matrix = smry_ %>%
@@ -101,7 +120,7 @@ draw(Heatmap(matrix = smry_ %>%
 	     	      as.data.frame() %>%
 	     	      tibble::column_to_rownames(var = "sample_name") %>%
 	     	      t(),
-	     col = c("1" = "#fb9a99", "2" = "#1f78b4", "3" = "#b2df8a", "4" = "#33a02c", "NA" = "dedbd8"),
+	     col = c("1" = "#fb9a99", "2" = "#1f78b4", "3" = "#b2df8a", "4" = "#33a02c", "NA" = "dedbd8", palette),
 	     name = " ",
 	     na_col = "#f0f0f0",
 	     rect_gp = gpar(col = "white"),
@@ -122,7 +141,7 @@ draw(Heatmap(matrix = smry_ %>%
 	     column_order = smry_ %>% .[["sample_name"]],
 	     use_raster = FALSE,
 	     width = unit(14*2, "cm"),
-	     height = unit(2/5 * 4 , "cm"),
+	     height = unit(2, "cm"),
 
 	     show_heatmap_legend = TRUE,
 	     heatmap_legend_param = list(legend_height = unit(3, "cm"), legend_width = unit(2, "cm"))))

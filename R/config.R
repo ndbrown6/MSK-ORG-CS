@@ -29,6 +29,7 @@ suppressPackageStartupMessages(library("GenomicRanges"))
 suppressPackageStartupMessages(library("ComplexHeatmap"))
 suppressPackageStartupMessages(library("RColorBrewer"))
 suppressPackageStartupMessages(library("dichromat"))
+suppressPackageStartupMessages(library("ggpubr"))
 
 url_manifest <- "../data/manifest.txt"
 url_ihc <- "../data/IHC.txt"

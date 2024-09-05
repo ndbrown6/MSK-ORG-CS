@@ -168,6 +168,18 @@ plot_ = smry_ %>%
 	      axis.text.y = element_text(size = 12)) +
 	guides(fill = guide_legend(title = "Assay"))
 
-pdf(file = "../res/Fold_change_by_Sample_Trop2.pdf", width = 20, height = 6)
-print(plot_)
-dev.off()
+
+plot_ = smry_ %>%
+	ggplot(aes(x = trop2, y = trop2_ihc)) +
+	geom_smooth(stat = "smooth", method = "lm", formula = y ~ x, size = 2, color = "goldenrod3") +
+	geom_point(stat = "identity", shape = 21, fill = "white", color = "black", size = 2, alpha = .75) +
+	scale_x_log10(limits = c(.05, 200)) +
+	scale_y_continuous() +
+	xlab("Expression") +
+	ylab("IHC") +
+	stat_cor(method = "spearman") +
+	theme_minimal() +
+	theme(axis.title.x = element_text(margin = margin(t = 20), size = 14),
+ 	      axis.title.y = element_text(margin = margin(r = 20), size = 14),
+	      axis.text.x = element_text(size = 12),
+	      axis.text.y = element_text(size = 12))

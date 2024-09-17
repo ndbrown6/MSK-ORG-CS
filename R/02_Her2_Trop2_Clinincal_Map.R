@@ -94,19 +94,14 @@ smry_ = manifest %>%
 	dplyr::ungroup() %>%
 	tidyr::drop_na() %>%
 	dplyr::mutate(sample_name = gsub(pattern = "cs", replacement = "CS", x = sample_name, fixed = TRUE)) %>%
-	dplyr::arrange(desc(trop2)) %>%
+	dplyr::arrange(trop2_ihc) %>%
 	dplyr::mutate(trop2_cat = case_when(
-		trop2_ihc >= 0 & trop2_ihc < 25 ~ "100",
-		trop2_ihc >= 25 & trop2_ihc < 50 ~ "101",
-		trop2_ihc >= 50 & trop2_ihc < 100 ~ "102",
-		trop2_ihc >= 100 & trop2_ihc < 125 ~ "103",
-		trop2_ihc >= 125 & trop2_ihc < 150 ~ "104",
-		trop2_ihc >= 150 & trop2_ihc < 175 ~ "105",
-		trop2_ihc >= 175 & trop2_ihc < 200 ~ "106",
-		trop2_ihc >= 200 & trop2_ihc < 225 ~ "107",
-		trop2_ihc >= 225 & trop2_ihc < 250 ~ "108",
-		trop2_ihc >= 250 & trop2_ihc < 275 ~ "109",
-		trop2_ihc >= 275 & trop2_ihc <= 300 ~ "110",
+		trop2_ihc >= 0 & trop2_ihc < 50 ~ "100",
+		trop2_ihc >= 50 & trop2_ihc < 100 ~ "101",
+		trop2_ihc >= 100 & trop2_ihc < 150 ~ "102",
+		trop2_ihc >= 150 & trop2_ihc < 200 ~ "103",
+		trop2_ihc >= 200 & trop2_ihc < 250 ~ "104",
+		trop2_ihc >= 250 & trop2_ihc <= 300 ~ "105",
 		TRUE ~ "NA"
 	))
 
@@ -146,40 +141,3 @@ draw(Heatmap(matrix = smry_ %>%
 	     show_heatmap_legend = TRUE,
 	     heatmap_legend_param = list(legend_height = unit(3, "cm"), legend_width = unit(2, "cm"))))
 dev.off()
-
-plot_ = smry_ %>%
-	dplyr::select(sample_name, Expression = trop2, IHC = trop2_ihc) %>%
-	dplyr::mutate(IHC = IHC / 2) %>%
-	reshape2::melt() %>%
-	dplyr::arrange(variable, desc(value)) %>%
-	dplyr::mutate(sample_name = factor(sample_name, levels = unique(sample_name), ordered = TRUE)) %>%
-	ggplot(aes(x = sample_name, y = value, fill = variable)) +
-	geom_bar(stat = "identity", position = "dodge", width = .85, color = "white") +
-	scale_fill_brewer(type = "qual", palette = 6) +
-	scale_y_sqrt(limits = c(0, 150),
-		     breaks = c(seq(from = 1, to = 7, by = 2), seq(from = 10, to = 150, by = 20)),
-		     labels = c(seq(from = 1, to = 7, by = 2), seq(from = 10, to = 150, by = 20))) +
-	xlab("") +
-	ylab("Expression Fold-Change") +
-	theme_minimal() +
-	theme(axis.title.x = element_text(margin = margin(t = 20), size = 14),
- 	      axis.title.y = element_text(margin = margin(r = 20), size = 14),
-	      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 12),
-	      axis.text.y = element_text(size = 12)) +
-	guides(fill = guide_legend(title = "Assay"))
-
-
-plot_ = smry_ %>%
-	ggplot(aes(x = trop2, y = trop2_ihc)) +
-	geom_smooth(stat = "smooth", method = "lm", formula = y ~ x, size = 2, color = "goldenrod3") +
-	geom_point(stat = "identity", shape = 21, fill = "white", color = "black", size = 2, alpha = .75) +
-	scale_x_log10(limits = c(.05, 200)) +
-	scale_y_continuous() +
-	xlab("Expression") +
-	ylab("IHC") +
-	stat_cor(method = "spearman") +
-	theme_minimal() +
-	theme(axis.title.x = element_text(margin = margin(t = 20), size = 14),
- 	      axis.title.y = element_text(margin = margin(r = 20), size = 14),
-	      axis.text.x = element_text(size = 12),
-	      axis.text.y = element_text(size = 12))

@@ -32,7 +32,8 @@ suppressPackageStartupMessages(library("dichromat"))
 suppressPackageStartupMessages(library("ggpubr"))
 
 url_manifest <- "../data/manifest.txt"
-url_ihc <- "../data/IHC.txt"
+url_ihc_her2 <- "../data/IHC_Her2.txt"
+url_ihc_trop2 <- "../data/IHC_Trop2.txt"
 exclude <- "cs42"
 
 'scientific_10' <- function(x) {

@@ -27,12 +27,17 @@ manifest = readr::read_tsv(file = url_manifest, col_names = TRUE, col_types = co
 	   dplyr::mutate(hgvsp_short = gsub(pattern = ",", replacement = ";", x = hgvsp_short, fixed = TRUE)) %>%
 	   dplyr::mutate(hgvsp_short = ifelse(hgvsp_short == "no alteration", NA, hgvsp_short)) %>%
 	   readr::type_convert() %>%
-	   dplyr::left_join(readr::read_tsv(file = url_ihc, col_names = TRUE, col_types = cols(.default = col_character())) %>%
+	   dplyr::left_join(readr::read_tsv(file = url_ihc_her2, col_names = TRUE, col_types = cols(.default = col_character())) %>%
 			    readr::type_convert() %>%
 			    dplyr::rename(sample_name = `sample number`,
-					  her2_ihc = `HER-2 IHC score`,
-					  trop2_ihc = `TROP-2 IHC score`,
-					  trop2_ihc_carcinoma = `TROP-2 IHC score (carcinoma)`), by = "sample_name")
+					  her2_ihc = `HER-2 IHC score`),
+			    by = "sample_name") %>%
+  	   dplyr::left_join(readr::read_tsv(file = url_ihc_trop2, col_names = TRUE, col_types = cols(.default = col_character())) %>%
+			    readr::type_convert() %>%
+			    dplyr::rename(sample_name = `sample number`,
+					  trop2_carcinoma_ihc = `TROP2 carcinoma H score`,
+					  trop2_overall_ihc = `TROP 2 overall H score`),
+			    by = "sample_name")
 
 smry_ = manifest %>%
 	reshape2::melt(id.vars = c("sample_name", "tp53_mutated", "carcinoma_classification", "sarcoma_classification", "sarcoma_predominant", "her2_ihc"),
@@ -83,6 +88,19 @@ pdf(file = "../res/Her2_by_Predominat_Sarcoma.pdf", width = 4.5, height = 4.5)
 print(plot_)
 dev.off()
 
+smry_ %>%
+dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(carcinoma_classification = case_when(
+	carcinoma_classification == 1 ~ "Serous",
+	carcinoma_classification == 2 ~ "Endometrioid",
+	carcinoma_classification == 3 ~ "HGNOS",
+	carcinoma_classification == 4 ~ "Undiff",
+)) %>%
+dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
+dplyr::group_by(sarcoma_predominant) %>%
+dplyr::summarize(n = n()) %>%
+pander::pander(caption = "Her2_by_Predominat_Sarcoma")
+
 plot_ = smry_ %>%
 	dplyr::filter(!is.na(sarcoma_classification)) %>%
         dplyr::mutate(sarcoma_classification = factor(sarcoma_classification, levels = c(1,2), ordered = TRUE)) %>%
@@ -121,9 +139,24 @@ pdf(file = "../res/Her2_by_Sarcoma_Classification.pdf", width = 4.5, height = 4.
 print(plot_)
 dev.off()
 
+smry_ %>%
+dplyr::filter(!is.na(sarcoma_classification)) %>%
+dplyr::mutate(sarcoma_classification = factor(sarcoma_classification, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(carcinoma_classification = case_when(
+	carcinoma_classification == 1 ~ "Serous",
+	carcinoma_classification == 2 ~ "Endometrioid",
+	carcinoma_classification == 3 ~ "HGNOS",
+	carcinoma_classification == 4 ~ "Undiff"
+)) %>%
+dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
+dplyr::group_by(sarcoma_classification) %>%
+dplyr::summarize(n = n()) %>%
+pander::pander(caption = "Her2_by_Sarcoma_Classification")
+
+
 smry_ = manifest %>%
 	dplyr::filter(!(sample_name %in% exclude)) %>%
-	reshape2::melt(id.vars = c("sample_name", "tp53_mutated", "carcinoma_classification", "sarcoma_classification", "sarcoma_predominant", "trop2_ihc", "trop2_ihc_carcinoma"),
+	reshape2::melt(id.vars = c("sample_name", "tp53_mutated", "carcinoma_classification", "sarcoma_classification", "sarcoma_predominant", "trop2_overall_ihc", "trop2_carcinoma_ihc"),
 		       measure.vars = c("TROP2_gene_expression_1", "TROP2_gene_expression_2", "TROP2_gene_expression_3")) %>%
 	dplyr::group_by(sample_name) %>%
 	dplyr::summarize(trop2 = mean(value, na.rm = TRUE),
@@ -131,10 +164,9 @@ smry_ = manifest %>%
 			 carcinoma_classification = unique(carcinoma_classification),
 			 sarcoma_classification = unique(sarcoma_classification),
 			 sarcoma_predominant = unique(sarcoma_predominant),
-			 trop2_ihc = unique(trop2_ihc),
-			 trop2_ihc_carcinoma = unique(trop2_ihc_carcinoma)) %>%
-	dplyr::ungroup() %>%
-	tidyr::drop_na("trop2")
+			 trop2_overall_ihc = unique(trop2_overall_ihc),
+			 trop2_carcinoma_ihc = unique(trop2_carcinoma_ihc)) %>%
+	dplyr::ungroup()
 	
 plot_ = smry_ %>%
         dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
@@ -172,6 +204,20 @@ plot_ = smry_ %>%
 pdf(file = "../res/Trop2_by_Predominat_Sarcoma.pdf", width = 4.5, height = 4.5)
 print(plot_)
 dev.off()
+
+smry_ %>%
+dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(carcinoma_classification = case_when(
+	carcinoma_classification == 1 ~ "Serous",
+	carcinoma_classification == 2 ~ "Endometrioid",
+	carcinoma_classification == 3 ~ "HGNOS",
+	carcinoma_classification == 4 ~ "Undiff"
+)) %>%
+dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
+dplyr::group_by(sarcoma_predominant) %>%
+dplyr::summarize(n = n()) %>%
+pander::pander(caption = "Trop2_by_Predominat_Sarcoma")
+
 
 plot_ = smry_ %>%
 	dplyr::filter(!is.na(sarcoma_classification)) %>%
@@ -211,6 +257,22 @@ plot_ = smry_ %>%
 pdf(file = "../res/Trop2_by_Sarcoma_Classification.pdf", width = 4.5, height = 4.5)
 print(plot_)
 dev.off()
+
+smry_ %>%
+dplyr::filter(!is.na(sarcoma_classification)) %>%
+dplyr::mutate(sarcoma_classification = factor(sarcoma_classification, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(carcinoma_classification = case_when(
+	carcinoma_classification == 1 ~ "Serous",
+	carcinoma_classification == 2 ~ "Endometrioid",
+	carcinoma_classification == 3 ~ "HGNOS",
+	carcinoma_classification == 4 ~ "Undiff"
+)) %>%
+dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
+dplyr::group_by(sarcoma_classification) %>%
+dplyr::summarize(n = n()) %>%
+pander::pander(caption = "Trop2_by_Sarcoma_Classification")
+
 
 plot_ = smry_ %>%
 	dplyr::filter(!is.na(sarcoma_classification)) %>%
@@ -257,6 +319,22 @@ pdf(file = "../res/Trop2_by_Predominant_Sarcome,Sarcoma_Classification.pdf", wid
 print(plot_)
 dev.off()
 
+smry_ %>%
+dplyr::filter(!is.na(sarcoma_classification)) %>%
+dplyr::mutate(sarcoma_classification = factor(sarcoma_classification, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(carcinoma_classification = case_when(
+	carcinoma_classification == 1 ~ "Serous",
+	carcinoma_classification == 2 ~ "Endometrioid",
+	carcinoma_classification == 3 ~ "HGNOS",
+	carcinoma_classification == 4 ~ "Undiff"
+)) %>%
+dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
+dplyr::group_by(sarcoma_predominant:sarcoma_classification) %>%
+dplyr::summarize(n = n()) %>%
+pander::pander(caption = "Trop2_by_Predominant_Sarcome,Sarcoma_Classification")
+
+
 plot_ = smry_ %>%
         dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
 	dplyr::mutate(carcinoma_classification = case_when(
@@ -266,9 +344,9 @@ plot_ = smry_ %>%
 		carcinoma_classification == 4 ~ "Undiff"
 	)) %>%
 	dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
-	ggplot(aes(x = sarcoma_predominant, y = trop2_ihc)) +
+	ggplot(aes(x = sarcoma_predominant, y = trop2_overall_ihc)) +
 	geom_boxplot(stat = "boxplot", outlier.shape = NA, fill = "white", show.legend = FALSE) +
-	geom_jitter(mapping = aes(x = sarcoma_predominant, y = trop2_ihc, color = carcinoma_classification),
+	geom_jitter(mapping = aes(x = sarcoma_predominant, y = trop2_overall_ihc, color = carcinoma_classification),
 		    position = position_jitter(0.15, 0), size = 3.5, shape = 21, fill = "white", alpha = .75, inherit.aes = TRUE) +
 	scale_color_brewer(type = "qual", palette = 6) +
 	scale_x_discrete(breaks = c("1", "2"),
@@ -294,6 +372,20 @@ pdf(file = "../res/Trop2_IHC_by_Predominat_Sarcoma.pdf", width = 4.5, height = 4
 print(plot_)
 dev.off()
 
+smry_ %>%
+dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(carcinoma_classification = case_when(
+	carcinoma_classification == 1 ~ "Serous",
+	carcinoma_classification == 2 ~ "Endometrioid",
+	carcinoma_classification == 3 ~ "HGNOS",
+	carcinoma_classification == 4 ~ "Undiff"
+)) %>%
+dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
+dplyr::group_by(sarcoma_predominant) %>%
+dplyr::summarize(n = n()) %>%
+pander::pander(caption = "Trop2_IHC_by_Predominat_Sarcoma")
+
+
 plot_ = smry_ %>%
 	dplyr::filter(!is.na(sarcoma_classification)) %>%
 	dplyr::mutate(sarcoma_classification = factor(sarcoma_classification, levels = c(1,2), ordered = TRUE)) %>%
@@ -305,9 +397,9 @@ plot_ = smry_ %>%
 		carcinoma_classification == 4 ~ "Undiff"
 	)) %>%
 	dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
-	ggplot(aes(x = sarcoma_classification, y = trop2_ihc)) +
+	ggplot(aes(x = sarcoma_classification, y = trop2_overall_ihc)) +
 	geom_boxplot(stat = "boxplot", outlier.shape = NA, fill = "white", show.legend = FALSE) +
-	geom_jitter(mapping = aes(x = sarcoma_classification, y = trop2_ihc, color = carcinoma_classification),
+	geom_jitter(mapping = aes(x = sarcoma_classification, y = trop2_overall_ihc, color = carcinoma_classification),
 		    position = position_jitter(0.15, 0), size = 3.5, shape = 21, fill = "white", alpha = .75, inherit.aes = TRUE) +
 	scale_color_brewer(type = "qual", palette = 6) +
 	scale_x_discrete(breaks = c("1", "2"),
@@ -333,6 +425,22 @@ pdf(file = "../res/Trop2_IHC_by_Sarcoma_Classification.pdf", width = 4.5, height
 print(plot_)
 dev.off()
 
+smry_ %>%
+dplyr::filter(!is.na(sarcoma_classification)) %>%
+dplyr::mutate(sarcoma_classification = factor(sarcoma_classification, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(carcinoma_classification = case_when(
+	carcinoma_classification == 1 ~ "Serous",
+	carcinoma_classification == 2 ~ "Endometrioid",
+	carcinoma_classification == 3 ~ "HGNOS",
+	carcinoma_classification == 4 ~ "Undiff"
+)) %>%
+dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
+dplyr::group_by(sarcoma_classification) %>%
+dplyr::summarize(n = n()) %>%
+pander::pander(caption = "Trop2_IHC_by_Sarcoma_Classification")
+
+
 plot_ = smry_ %>%
 	dplyr::filter(!is.na(sarcoma_classification)) %>%
 	dplyr::mutate(sarcoma_classification = factor(sarcoma_classification, levels = c(1,2), ordered = TRUE)) %>%
@@ -344,9 +452,9 @@ plot_ = smry_ %>%
 		carcinoma_classification == 4 ~ "Undiff"
 	)) %>%
 	dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
-	ggplot(aes(x = sarcoma_predominant:sarcoma_classification, y = trop2_ihc)) +
+	ggplot(aes(x = sarcoma_predominant:sarcoma_classification, y = trop2_overall_ihc)) +
 	geom_boxplot(stat = "boxplot", outlier.shape = NA, fill = "white", show.legend = FALSE) +
-	geom_jitter(mapping = aes(x = sarcoma_predominant:sarcoma_classification, y = trop2_ihc, color = carcinoma_classification),
+	geom_jitter(mapping = aes(x = sarcoma_predominant:sarcoma_classification, y = trop2_overall_ihc, color = carcinoma_classification),
 		    position = position_jitter(0.15, 0), size = 3.5, shape = 21, fill = "white", alpha = .75, inherit.aes = TRUE) +
 	scale_color_brewer(type = "qual", palette = 6) +
 	scale_x_discrete(breaks = c("1:1", "1:2", "2:1", "2:2"),
@@ -379,6 +487,22 @@ pdf(file = "../res/Trop2_IHC_by_Predominant_Sarcome,Sarcoma_Classification.pdf",
 print(plot_)
 dev.off()
 
+smry_ %>%
+dplyr::filter(!is.na(sarcoma_classification)) %>%
+dplyr::mutate(sarcoma_classification = factor(sarcoma_classification, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(carcinoma_classification = case_when(
+	carcinoma_classification == 1 ~ "Serous",
+	carcinoma_classification == 2 ~ "Endometrioid",
+	carcinoma_classification == 3 ~ "HGNOS",
+	carcinoma_classification == 4 ~ "Undiff"
+)) %>%
+dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
+dplyr::group_by(sarcoma_predominant:sarcoma_classification) %>%
+dplyr::summarize(n = n()) %>%
+pander::pander(caption = "Trop2_IHC_by_Predominant_Sarcome,Sarcoma_Classification")
+
+
 plot_ = smry_ %>%
         dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
 	dplyr::mutate(carcinoma_classification = case_when(
@@ -388,9 +512,9 @@ plot_ = smry_ %>%
 		carcinoma_classification == 4 ~ "Undiff"
 	)) %>%
 	dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
-	ggplot(aes(x = sarcoma_predominant, y = trop2_ihc_carcinoma)) +
+	ggplot(aes(x = sarcoma_predominant, y = trop2_carcinoma_ihc)) +
 	geom_boxplot(stat = "boxplot", outlier.shape = NA, fill = "white", show.legend = FALSE) +
-	geom_jitter(mapping = aes(x = sarcoma_predominant, y = trop2_ihc_carcinoma, color = carcinoma_classification),
+	geom_jitter(mapping = aes(x = sarcoma_predominant, y = trop2_carcinoma_ihc, color = carcinoma_classification),
 		    position = position_jitter(0.15, 0), size = 3.5, shape = 21, fill = "white", alpha = .75, inherit.aes = TRUE) +
 	scale_color_brewer(type = "qual", palette = 6) +
 	scale_x_discrete(breaks = c("1", "2"),
@@ -416,6 +540,19 @@ pdf(file = "../res/Trop2_IHC_Carcinoma_by_Predominat_Sarcoma.pdf", width = 4.5, 
 print(plot_)
 dev.off()
 
+smry_ %>%
+dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(carcinoma_classification = case_when(
+	carcinoma_classification == 1 ~ "Serous",
+	carcinoma_classification == 2 ~ "Endometrioid",
+	carcinoma_classification == 3 ~ "HGNOS",
+	carcinoma_classification == 4 ~ "Undiff"
+)) %>%
+dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
+dplyr::group_by(sarcoma_predominant) %>%
+dplyr::summarize(n = n()) %>%
+pander::pander(caption = "Trop2_IHC_Carcinoma_by_Predominat_Sarcoma")
+
 plot_ = smry_ %>%
 	dplyr::filter(!is.na(sarcoma_classification)) %>%
 	dplyr::mutate(sarcoma_classification = factor(sarcoma_classification, levels = c(1,2), ordered = TRUE)) %>%
@@ -427,9 +564,9 @@ plot_ = smry_ %>%
 		carcinoma_classification == 4 ~ "Undiff"
 	)) %>%
 	dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
-	ggplot(aes(x = sarcoma_classification, y = trop2_ihc_carcinoma)) +
+	ggplot(aes(x = sarcoma_classification, y = trop2_carcinoma_ihc)) +
 	geom_boxplot(stat = "boxplot", outlier.shape = NA, fill = "white", show.legend = FALSE) +
-	geom_jitter(mapping = aes(x = sarcoma_classification, y = trop2_ihc_carcinoma, color = carcinoma_classification),
+	geom_jitter(mapping = aes(x = sarcoma_classification, y = trop2_carcinoma_ihc, color = carcinoma_classification),
 		    position = position_jitter(0.15, 0), size = 3.5, shape = 21, fill = "white", alpha = .75, inherit.aes = TRUE) +
 	scale_color_brewer(type = "qual", palette = 6) +
 	scale_x_discrete(breaks = c("1", "2"),
@@ -455,6 +592,22 @@ pdf(file = "../res/Trop2_IHC_Carcinoma_by_Sarcoma_Classification.pdf", width = 4
 print(plot_)
 dev.off()
 
+smry_ %>%
+dplyr::filter(!is.na(sarcoma_classification)) %>%
+dplyr::mutate(sarcoma_classification = factor(sarcoma_classification, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(carcinoma_classification = case_when(
+	carcinoma_classification == 1 ~ "Serous",
+	carcinoma_classification == 2 ~ "Endometrioid",
+	carcinoma_classification == 3 ~ "HGNOS",
+	carcinoma_classification == 4 ~ "Undiff"
+)) %>%
+dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
+dplyr::group_by(sarcoma_classification) %>%
+dplyr::summarize(n = n()) %>%
+pander::pander(caption = "Trop2_IHC_Carcinoma_by_Sarcoma_Classification")
+
+
 plot_ = smry_ %>%
 	dplyr::filter(!is.na(sarcoma_classification)) %>%
 	dplyr::mutate(sarcoma_classification = factor(sarcoma_classification, levels = c(1,2), ordered = TRUE)) %>%
@@ -466,9 +619,9 @@ plot_ = smry_ %>%
 		carcinoma_classification == 4 ~ "Undiff"
 	)) %>%
 	dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
-	ggplot(aes(x = sarcoma_predominant:sarcoma_classification, y = trop2_ihc_carcinoma)) +
+	ggplot(aes(x = sarcoma_predominant:sarcoma_classification, y = trop2_carcinoma_ihc)) +
 	geom_boxplot(stat = "boxplot", outlier.shape = NA, fill = "white", show.legend = FALSE) +
-	geom_jitter(mapping = aes(x = sarcoma_predominant:sarcoma_classification, y = trop2_ihc_carcinoma, color = carcinoma_classification),
+	geom_jitter(mapping = aes(x = sarcoma_predominant:sarcoma_classification, y = trop2_carcinoma_ihc, color = carcinoma_classification),
 		    position = position_jitter(0.15, 0), size = 3.5, shape = 21, fill = "white", alpha = .75, inherit.aes = TRUE) +
 	scale_color_brewer(type = "qual", palette = 6) +
 	scale_x_discrete(breaks = c("1:1", "1:2", "2:1", "2:2"),
@@ -500,3 +653,18 @@ plot_ = smry_ %>%
 pdf(file = "../res/Trop2_IHC_Carcinoma_by_Predominant_Sarcome,Sarcoma_Classification.pdf", width = 5.5, height = 5.5)
 print(plot_)
 dev.off()
+
+smry_ %>%
+dplyr::filter(!is.na(sarcoma_classification)) %>%
+dplyr::mutate(sarcoma_classification = factor(sarcoma_classification, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
+dplyr::mutate(carcinoma_classification = case_when(
+	carcinoma_classification == 1 ~ "Serous",
+	carcinoma_classification == 2 ~ "Endometrioid",
+	carcinoma_classification == 3 ~ "HGNOS",
+	carcinoma_classification == 4 ~ "Undiff"
+)) %>%
+dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels = c("Serous", "Endometrioid", "HGNOS", "Undiff", "NA"), ordered = TRUE)) %>%
+dplyr::group_by(sarcoma_predominant:sarcoma_classification) %>%
+dplyr::summarize(n = n()) %>%
+pander::pander(caption = "Trop2_IHC_Carcinoma_by_Predominant_Sarcome,Sarcoma_Classification")

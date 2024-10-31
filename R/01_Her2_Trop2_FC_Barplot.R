@@ -6,6 +6,7 @@ rm(list=ls(all=TRUE))
 source("config.R")
 
 manifest = readr::read_tsv(file = url_manifest, col_names = TRUE, col_types = cols(.default = col_character())) %>%
+	   dplyr::left_join(readr::read_tsv(file = url_erbb2, col_names = TRUE, col_types = cols(.default = col_character())), by = "sample number") %>%
 	   dplyr::select(sample_name = `sample number`,
 			 is_tp53_mutated_yes_no = TP53,
 			 is_tp53_mutated_0_1 = `TP53 mut?`,
@@ -15,14 +16,14 @@ manifest = readr::read_tsv(file = url_manifest, col_names = TRUE, col_types = co
 			 sarcoma_classification = `sarcoma component classification (1=homologous; 2=heterologous-including rhabdo, chondroid, chondrosarc)`,
 			 `sarcoma_predominant_%` = `sarcoma predominant? >50%`,
 			 sarcoma_predominant_yes_no = `sarcoma predominant? (1=yes, 2=no)`,
-			 HER2_gene_expression_1,
-			 HER2_gene_expression_2,
-			 HER2_gene_expression_3,
-			 HER2_gene_expression_mean,
-			 TROP2_gene_expression_1,
-			 TROP2_gene_expression_2,
-			 TROP2_gene_expression_3,
-			 TROP2_gene_expression_mean,
+			 HER2_gene_expression_1 = `HER-2 gene amplification_1`,
+			 HER2_gene_expression_2 = `HER-2 gene amplification_2`,
+			 HER2_gene_expression_3 = `HER-2 gene amplification_3`,
+			 HER2_gene_expression_mean = `HER-2 amplification_avg`,
+			 TROP2_gene_expression_1 = `TROP-2 amplification_1`,
+			 TROP2_gene_expression_2 = `TROP-2 amplification_2`,
+			 TROP2_gene_expression_3 = `TROP-2 amplification_3`,
+			 TROP2_gene_expression_mean = `TROP-2 amplification_avg`,
 			 ERBB2_gene_amplification) %>%
 	   dplyr::mutate(is_tp53_mutated_yes_no = case_when(
 		   is_tp53_mutated_yes_no == "Yes" ~ "yes",
@@ -42,8 +43,9 @@ manifest = readr::read_tsv(file = url_manifest, col_names = TRUE, col_types = co
 		   carcinoma_classification == "4" ~ "undifferentiated",
 	   )) %>%
 	   dplyr::mutate(sarcoma_classification = case_when(
-		   carcinoma_classification == "1" ~ "homologous",
-		   carcinoma_classification == "2" ~ "heterologous"
+		   is.na(sarcoma_classification) ~ "NA",
+		   sarcoma_classification == "1" ~ "homologous",
+		   sarcoma_classification == "2" ~ "heterologous"
 	   )) %>%
 	   dplyr::mutate(`sarcoma_predominant_%` = case_when(
 		   grepl("N", `sarcoma_predominant_%`, fixed = TRUE) ~ "0",
@@ -106,7 +108,6 @@ print(plot_)
 dev.off()
 
 plot_ = manifest %>%
-	dplyr::filter(!(sample_name %in% exclude)) %>%
 	reshape2::melt(id.vars = "sample_name", measure.vars = c("TROP2_gene_expression_1", "TROP2_gene_expression_2", "TROP2_gene_expression_3")) %>%
 	dplyr::group_by(sample_name) %>%
 	dplyr::summarize(mean = mean(value, na.rm = TRUE),

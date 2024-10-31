@@ -6,6 +6,7 @@ rm(list=ls(all=TRUE))
 source("config.R")
 
 manifest = readr::read_tsv(file = url_manifest, col_names = TRUE, col_types = cols(.default = col_character())) %>%
+	   dplyr::left_join(readr::read_tsv(file = url_erbb2, col_names = TRUE, col_types = cols(.default = col_character())), by = "sample number") %>%
 	   dplyr::select(sample_name = `sample number`,
 			 tp53_mutated = `TP53 mut?`,
 			 hgvsp_short = `IMPACT TP53`,
@@ -14,30 +15,22 @@ manifest = readr::read_tsv(file = url_manifest, col_names = TRUE, col_types = co
 			 sarcoma_classification = `sarcoma component classification (1=homologous; 2=heterologous-including rhabdo, chondroid, chondrosarc)`,
 			 `sarcoma_predominant_%` = `sarcoma predominant? >50%`,
 			 sarcoma_predominant = `sarcoma predominant? (1=yes, 2=no)`,
-			 HER2_gene_expression_1,
-			 HER2_gene_expression_2,
-			 HER2_gene_expression_3,
-			 HER2_gene_expression_mean,
-			 TROP2_gene_expression_1,
-			 TROP2_gene_expression_2,
-			 TROP2_gene_expression_3,
-			 TROP2_gene_expression_mean,
-			 ERBB2_gene_amplification) %>%
+			 HER2_gene_expression_1 = `HER-2 gene amplification_1`,
+			 HER2_gene_expression_2 = `HER-2 gene amplification_2`,
+			 HER2_gene_expression_3 = `HER-2 gene amplification_3`,
+			 HER2_gene_expression_mean = `HER-2 amplification_avg`,
+			 TROP2_gene_expression_1 = `TROP-2 amplification_1`,
+			 TROP2_gene_expression_2 = `TROP-2 amplification_2`,
+			 TROP2_gene_expression_3 = `TROP-2 amplification_3`,
+			 TROP2_gene_expression_mean = `TROP-2 amplification_avg`,
+			 ERBB2_gene_amplification,
+			 her2_ihc = `HER-2 IHC score`,
+			 trop2_carcinoma_ihc = `TROP2 carcinoma H score`,
+			 trop2_overall_ihc = `TROP 2 overall H score`) %>%
 	   dplyr::mutate(hgvsp_short = gsub(pattern = "(Driver)", replacement = "", x = hgvsp_short, fixed = TRUE)) %>%
 	   dplyr::mutate(hgvsp_short = gsub(pattern = ",", replacement = ";", x = hgvsp_short, fixed = TRUE)) %>%
 	   dplyr::mutate(hgvsp_short = ifelse(hgvsp_short == "no alteration", NA, hgvsp_short)) %>%
-	   readr::type_convert() %>%
-	   dplyr::left_join(readr::read_tsv(file = url_ihc_her2, col_names = TRUE, col_types = cols(.default = col_character())) %>%
-			    readr::type_convert() %>%
-			    dplyr::rename(sample_name = `sample number`,
-					  her2_ihc = `HER-2 IHC score`),
-			    by = "sample_name") %>%
-  	   dplyr::left_join(readr::read_tsv(file = url_ihc_trop2, col_names = TRUE, col_types = cols(.default = col_character())) %>%
-			    readr::type_convert() %>%
-			    dplyr::rename(sample_name = `sample number`,
-					  trop2_carcinoma_ihc = `TROP2 carcinoma H score`,
-					  trop2_overall_ihc = `TROP 2 overall H score`),
-			    by = "sample_name")
+	   readr::type_convert()
 
 smry_ = manifest %>%
 	reshape2::melt(id.vars = c("sample_name", "tp53_mutated", "carcinoma_classification", "sarcoma_classification", "sarcoma_predominant", "her2_ihc"),
@@ -155,7 +148,6 @@ pander::pander(caption = "Her2_by_Sarcoma_Classification")
 
 
 smry_ = manifest %>%
-	dplyr::filter(!(sample_name %in% exclude)) %>%
 	reshape2::melt(id.vars = c("sample_name", "tp53_mutated", "carcinoma_classification", "sarcoma_classification", "sarcoma_predominant", "trop2_overall_ihc", "trop2_carcinoma_ihc"),
 		       measure.vars = c("TROP2_gene_expression_1", "TROP2_gene_expression_2", "TROP2_gene_expression_3")) %>%
 	dplyr::group_by(sample_name) %>%
@@ -166,7 +158,17 @@ smry_ = manifest %>%
 			 sarcoma_predominant = unique(sarcoma_predominant),
 			 trop2_overall_ihc = unique(trop2_overall_ihc),
 			 trop2_carcinoma_ihc = unique(trop2_carcinoma_ihc)) %>%
-	dplyr::ungroup()
+	dplyr::ungroup() %>%
+	dplyr::mutate(trop2_overall_ihc = case_when(
+		trop2_overall_ihc == "n/a" ~ "NA",
+		TRUE ~ trop2_overall_ihc
+	)) %>%
+	dplyr::mutate(trop2_overall_ihc = as.numeric(trop2_overall_ihc)) %>%
+	dplyr::mutate(trop2_carcinoma_ihc = case_when(
+		trop2_carcinoma_ihc == "n/a" ~ "NA",
+		TRUE ~ trop2_carcinoma_ihc
+	)) %>%
+	dplyr::mutate(trop2_carcinoma_ihc = as.numeric(trop2_carcinoma_ihc))
 	
 plot_ = smry_ %>%
         dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
@@ -333,7 +335,6 @@ dplyr::mutate(carcinoma_classification = factor(carcinoma_classification, levels
 dplyr::group_by(sarcoma_predominant:sarcoma_classification) %>%
 dplyr::summarize(n = n()) %>%
 pander::pander(caption = "Trop2_by_Predominant_Sarcome,Sarcoma_Classification")
-
 
 plot_ = smry_ %>%
         dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%

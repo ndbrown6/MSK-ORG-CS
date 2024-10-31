@@ -1,0 +1,73 @@
+sample number	ERBB2_gene_amplification
+cs1	
+cs10	
+cs11	
+cs12	
+cs13	
+cs14	
+cs15	
+cs16	
+cs17	
+cs18	
+cs19	
+cs2	
+cs20	
+cs21	
+cs22	
+cs23	
+cs24	
+cs25	
+cs26	
+cs27	
+cs28	Amplified
+cs29	
+cs3	
+cs30	
+cs31	Amplified
+cs32	
+cs33	
+cs34	
+cs35	
+cs36	
+cs37	
+cs38	
+cs39	
+cs4	
+cs40	
+cs41	
+cs42	
+cs43	
+cs44	
+cs45	
+cs46	
+cs47	
+cs48	
+cs49	
+cs5	
+cs50	
+cs51	
+cs52	
+cs53	
+cs54	Not Available
+cs55	
+cs56	
+cs57	
+cs58	
+cs59	
+cs6	
+cs60	
+cs61	
+cs62	
+cs63	
+cs64	
+cs65	
+cs66	Not Available
+cs67	
+cs68	
+cs69	
+cs7	
+cs70	
+cs71	
+cs72	Not Available
+cs8	
+cs9	Amplified

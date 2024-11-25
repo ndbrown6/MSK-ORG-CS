@@ -374,6 +374,8 @@ print(plot_)
 dev.off()
 
 smry_ %>%
+dplyr::filter(!is.na(trop2_overall_ihc)) %>%
+dplyr::filter(!is.na(sarcoma_predominant)) %>%
 dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%
 dplyr::mutate(carcinoma_classification = case_when(
 	carcinoma_classification == 1 ~ "Serous",
@@ -427,6 +429,7 @@ print(plot_)
 dev.off()
 
 smry_ %>%
+dplyr::filter(!is.na(trop2_overall_ihc)) %>%
 dplyr::filter(!is.na(sarcoma_classification)) %>%
 dplyr::mutate(sarcoma_classification = factor(sarcoma_classification, levels = c(1,2), ordered = TRUE)) %>%
 dplyr::mutate(sarcoma_predominant = factor(sarcoma_predominant, levels = c(1,2), ordered = TRUE)) %>%

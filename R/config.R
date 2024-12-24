@@ -33,6 +33,7 @@ suppressPackageStartupMessages(library("ggpubr"))
 
 url_manifest <- "../data/manifest.txt"
 url_erbb2 <- "../data/ERBB2_amplification.txt"
+url_trop2 <- "../data/TROP2_H-scores.txt"
 
 'scientific_10' <- function(x) {
 	parse(text=gsub("+", "", gsub("e", " %.% 10^", scales::scientific_format()(x)), , fixed = TRUE))

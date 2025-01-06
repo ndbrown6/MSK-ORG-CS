@@ -1,4 +1,4 @@
-sample number	carcinoma_h	overall_h	sarcoma_%
+sample number	Carcinoma H-score	Overall H-score	% Sarcoma
 cs31	150	90	40
 cs29	80	48	40
 cs20	90	90	0
